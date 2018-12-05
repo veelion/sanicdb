@@ -4,9 +4,10 @@
 
 import traceback
 import aiomysql
+import pymysql
 
-version = "0.7"
-version_info = (0, 7, 0, 0)
+version = "0.2"
+version_info = (0, 2, 0, 0)
 
 
 class SanicDB:
@@ -54,8 +55,13 @@ class SanicDB:
             await self.init_pool()
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
-                await cur.execute(query, kwparameters or parameters)
-                ret = await cur.fetchall()
+                try:
+                    await cur.execute(query, kwparameters or parameters)
+                    ret = await cur.fetchall()
+                except pymysql.err.InternalError:
+                    await conn.ping()
+                    await cur.execute(query, kwparameters or parameters)
+                    ret = await cur.fetchall()
                 return ret
 
     async def get(self, query, *parameters, **kwparameters):
@@ -65,8 +71,13 @@ class SanicDB:
             await self.init_pool()
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
-                await cur.execute(query, kwparameters or parameters)
-                ret = await cur.fetchone()
+                try:
+                    await cur.execute(query, kwparameters or parameters)
+                    ret = await cur.fetchone()
+                except pymysql.err.InternalError:
+                    await conn.ping()
+                    await cur.execute(query, kwparameters or parameters)
+                    ret = await cur.fetchone()
                 return ret
 
     async def execute(self, query, *parameters, **kwparameters):
@@ -75,7 +86,12 @@ class SanicDB:
             await self.init_pool()
         async with self.pool.acquire() as conn:
             async with conn.cursor() as cur:
-                await cur.execute(query, kwparameters or parameters)
+                try:
+                    await cur.execute(query, kwparameters or parameters)
+                except Exception:
+                    # https://github.com/aio-libs/aiomysql/issues/340
+                    await conn.ping()
+                    await cur.execute(query, kwparameters or parameters)
                 return cur.lastrowid
 
     # high level interface
