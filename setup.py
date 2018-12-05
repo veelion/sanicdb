@@ -4,7 +4,7 @@ import sanicdb
 setup(
     name="sanicdb",
     version=sanicdb.version,
-    description=sanicdb.__doc__
+    description=sanicdb.__doc__,
     author="veelion",
     author_email="veelion@gmail.com",
     url='https://github.com/veelion/sanicdb',
