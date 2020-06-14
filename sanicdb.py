@@ -6,8 +6,8 @@ import traceback
 import aiomysql
 import pymysql
 
-version = "0.2"
-version_info = (0, 2, 0, 0)
+version = "0.3"
+version_info = (0, 3, 0, 0)
 
 
 class SanicDB:
@@ -48,6 +48,24 @@ class SanicDB:
         if self.sanic:
             self.db_args['loop'] = self.sanic.loop
         self.pool = await aiomysql.create_pool(**self.db_args)
+
+    async def query_many(self, queries):
+        """query man SQL, Returns all result."""
+        if not self.pool:
+            await self.init_pool()
+        async with self.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                results = []
+                for query in queries:
+                    try:
+                        await cur.execute(query)
+                        ret = await cur.fetchall()
+                    except pymysql.err.InternalError:
+                        await conn.ping()
+                        await cur.execute(query)
+                        ret = await cur.fetchall()
+                    results.append(ret)
+                return results
 
     async def query(self, query, *parameters, **kwparameters):
         """Returns a row list for the given query and parameters."""
