@@ -1,4 +1,4 @@
-SanicDB
+SanicDB - Archived, please check [veelion/ezmysql](https://github.com/veelion/ezmysql) for new implementation.
 ======
 
 Description
